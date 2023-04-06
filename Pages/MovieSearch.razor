@@ -1,0 +1,179 @@
+@using Lab5.Data;
+
+@inject IMovieService MovieService;
+
+@page "/movies"
+
+<body>
+    <h1>Movies</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Search" @bind="SearchTerm" />
+        </div>
+        <div class="col-md-6">
+            <button class="btn btn-primary" @onclick="Search">Search</button>
+            <button class="btn btn-primary" @onclick="Clear">Clear</button>
+            <button class="btn btn-success" @onclick="AddMovie">Add Movie</button>
+        </div>
+    </div>
+    <Modal @ref="modal">
+        <Title>Add a Movie!</Title>
+        <Body>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" class="form-control" @bind="_inputTitle" id="title" placeholder="Enter title">
+            </div>
+            <div class="form-group">
+                <label for="year">Release Year</label>
+                <input type="number" maxlength="4" class="form-control" @bind="_inputYear" id="year" placeholder="Enter release year">
+            </div>
+            <div class="form-group">
+                <label for="genre">Genre</label>
+                <input type="text" class="form-control" @bind="_inputGenre" id="genre" placeholder="Enter genre">
+            </div>
+        </Body>
+        <Footer>
+            <button type="button" class="btn btn-success" @onclick="SaveData">Save changes</button>
+            <button type="button" class="btn btn-danger" data-dismiss="modal" @onclick="() => modal.Close()">Cancel</button>
+        </Footer>
+    </Modal>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th><span class="sort-link" @onclick="SortByTitle">Title</span><span class='@sortIcon["title"]' aria-hidden="true"></span></th>
+                <th><span class="sort-link" @onclick="SortByYear">Release Year</span><span class='@sortIcon["year"]' aria-hidden="true"></span></th>
+                <th><span class="sort-link" @onclick="SortByGenre">Genre</span><span class='@sortIcon["genre"]' aria-hidden="true"></span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var movie in movies)
+            {
+                <tr>
+                    <td>@movie.Title</td>
+                    <td>@movie.Year</td>
+                    <td>@movie.Genre</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+
+@code {
+    
+        private Modal modal;
+        private List<Movie> movies;
+
+        public string SearchTerm { get; set; }
+        private string _sortTitle = "asc";
+        private string _sortYear = "asc";
+        private string _sortGenre = "asc";
+
+        private string _inputTitle { get; set;}
+        private int _inputYear { get; set;}
+        private string _inputGenre { get; set;}
+
+
+        private Dictionary<string, string> sortIcon = new Dictionary<string, string>()
+        {
+            {"title", "oi oi-arrow-top"},
+            {"year", "oi oi-arrow-top"},
+            {"genre", "oi oi-arrow-top"}
+        };
+
+    
+        protected override void OnInitialized()
+        {
+
+            // Sort by title by default, ascending, then year ascending, then genre ascending
+            movies = MovieService.GetMovies(m => true);
+            movies = movies.OrderBy(m => m.Title).ThenBy(m => m.Year).ThenBy(m => m.Genre).ToList();
+            sortIcon["title"] = "oi oi-arrow-top";
+            sortIcon["year"] = "oi oi-arrow-top";
+            sortIcon["genre"] = "oi oi-arrow-top";
+
+        }
+
+        private void Search()
+        {
+            movies = MovieService.GetMovies(m => m.Title.ToUpper().Contains(SearchTerm.ToUpper()));
+        }
+
+        private void Clear()
+        {
+            SearchTerm = "";
+            movies = MovieService.GetMovies(m => true);
+        }
+
+        private void SortByTitle()
+        {
+            switch(_sortTitle)
+            {
+                case "asc":
+                    _sortTitle = "desc";
+                    sortIcon["title"] = "oi oi-arrow-bottom";
+                    movies = movies.OrderByDescending(m => m.Title).ToList();
+                    break;
+                case "desc":
+                    _sortTitle = "asc";
+                    sortIcon["title"] = "oi oi-arrow-top";
+                    movies = movies.OrderBy(m => m.Title).ToList();
+                    break;
+            }
+        }
+
+        private void SortByYear()
+        {
+            switch(_sortYear)
+            {
+                case "asc":
+                    _sortYear = "desc";
+                    sortIcon["year"] = "oi oi-arrow-bottom";
+                    movies = movies.OrderByDescending(m => m.Year).ToList();
+                    break;
+                case "desc":
+                    _sortYear = "asc";
+                    sortIcon["year"] = "oi oi-arrow-top";
+                    movies = movies.OrderBy(m => m.Year).ToList();
+                    break;
+            }
+        }
+
+        private void SortByGenre()
+        {
+            switch(_sortGenre)
+            {
+                case "asc":
+                    _sortGenre = "desc";
+                    sortIcon["genre"] = "oi oi-arrow-bottom";
+                    movies = movies.OrderByDescending(m => m.Genre).ToList();
+                    break;
+                case "desc":
+                    _sortGenre = "asc";
+                    sortIcon["genre"] = "oi oi-arrow-top";
+                    movies = movies.OrderBy(m => m.Genre).ToList();
+                    break;
+            }
+        }
+
+        private void AddMovie()
+        {
+            modal.Open();
+            System.Console.WriteLine("Add Movie");
+        }
+
+        private void SaveData()
+        {
+            System.Console.WriteLine("Save Data");
+            MovieService.AddMovie(new Movie(_inputTitle, _inputYear, _inputGenre));
+            modal.Close();
+            GetMovies();
+            
+        }
+
+        private void GetMovies()
+        {
+            movies = MovieService.GetMovies(m => true);
+        }
+    
+}
